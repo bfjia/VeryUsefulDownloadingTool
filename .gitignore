@@ -16,3 +16,5 @@ __pycache__/
 .python_env/
 python_env/
 YT_DL_SERVER.code-workspace
+creds.txt
+download.txt

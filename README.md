@@ -186,6 +186,27 @@ The app is served over HTTPS as described in the nginx setup above.
 - Click **Download Video** for MP4 or **Download Audio** for MP3.
 - **Advanced**: open “Advanced: use cookie file” and upload a Netscape-format cookie file if the video needs login or is restricted.
 
+### Download via curl (no browser)
+
+You can download a URL with a POST request using curl. First log in to get a session cookie, then call the download endpoint with that cookie.
+
+1. **Log in** (saves the session cookie to `cookies.txt`):
+   ```bash
+   curl -c cookies.txt -X POST -d "password=YOUR_PASSWORD" https://your-server/login
+   ```
+   Replace `YOUR_PASSWORD` with your app password and `https://your-server` with your base URL (e.g. `http://127.0.0.1:5000` for local dev).
+
+2. **Download video** (MP4) or **audio** (MP3):
+   ```bash
+   # Video (MP4)
+   curl -b cookies.txt -X POST -F "url=https://www.youtube.com/watch?v=VIDEO_ID" https://your-server/ddddd/vvvvv -o video.mp4
+
+   # Audio (MP3)
+   curl -b cookies.txt -X POST -F "url=https://www.youtube.com/watch?v=VIDEO_ID" https://your-server/ddddd/aaaaa -o audio.mp3
+   ```
+
+   Optional: to use a Netscape-format cookie file for age-restricted or member-only videos, add `-F "cookies=@/path/to/cookies.txt"` to the curl command.
+
 ## Cookie file
 
 Export cookies from your browser (e.g. with an extension like “Get cookies.txt”) in Netscape format and upload that file in the Advanced section when needed.
