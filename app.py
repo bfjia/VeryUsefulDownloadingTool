@@ -276,9 +276,7 @@ def _handle_download(as_audio: bool):
     if not path or not os.path.isfile(path):
         return jsonify({"error": "Download failed. Check the URL and try again."}), 400
 
-    ext = "mp3" if as_audio else "mp4"
-    url_id = _video_id_from_url(url)
-    download_name = _title_for_filename(info, ext, url_fallback_id=url_id)
+    download_name = "audio.mp3" if as_audio else "video.mp4"
     file_size = os.path.getsize(path)
     _CHUNK = 64 * 1024
 
