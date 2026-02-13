@@ -7,7 +7,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from flask import Flask, jsonify, redirect, render_template, request, send_file, session, url_for, after_this_request
+from flask import Flask, Response, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 from yt_dlp import YoutubeDL
 
@@ -279,23 +279,37 @@ def _handle_download(as_audio: bool):
     ext = "mp3" if as_audio else "mp4"
     url_id = _video_id_from_url(url)
     download_name = _title_for_filename(info, ext, url_fallback_id=url_id)
+    file_size = os.path.getsize(path)
+    _CHUNK = 64 * 1024
 
-    @after_this_request
-    def _cleanup(resp):
+    def _stream_and_cleanup():
         try:
-            os.unlink(path)
-            dirpath = os.path.dirname(path)
-            if os.path.isdir(dirpath):
-                os.rmdir(dirpath)
-        except OSError:
-            pass
-        return resp
+            with open(path, "rb") as f:
+                while True:
+                    chunk = f.read(_CHUNK)
+                    if not chunk:
+                        break
+                    yield chunk
+        finally:
+            try:
+                os.unlink(path)
+                dirpath = os.path.dirname(path)
+                if os.path.isdir(dirpath):
+                    os.rmdir(dirpath)
+            except OSError:
+                pass
 
-    return send_file(
-        path,
-        as_attachment=True,
-        download_name=download_name,
-        max_age=0,
+    # Stream in chunks so Gunicorn does not use sendfile(); avoids worker
+    # crash (SystemExit) when the client disconnects mid-download.
+    safe_name = download_name.replace("\\", "\\\\").replace('"', '\\"')
+    return Response(
+        _stream_and_cleanup(),
+        mimetype="application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name}"',
+            "Content-Length": str(file_size),
+        },
+        direct_passthrough=True,
     )
 
 

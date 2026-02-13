@@ -333,7 +333,6 @@
         var total = urls.length;
         var index = 0;
         var cancelled = false;
-        var abortController = new AbortController();
 
         function finish(doneCount, stopped) {
           progressStopWrap.style.display = 'none';
@@ -347,7 +346,8 @@
 
         progressStopBtn.onclick = function () {
           cancelled = true;
-          abortController.abort();
+          /* Do not abort the in-flight request: that closes the connection mid-stream
+             and can crash the Gunicorn worker (sendfile + broken pipe). */
         };
 
         function next() {
@@ -364,7 +364,7 @@
           var formData = new FormData(form);
           formData.set('url', url);
 
-          fetch(action, { method: 'POST', body: formData, signal: abortController.signal })
+          fetch(action, { method: 'POST', body: formData })
             .then(function (res) {
               if (cancelled) return;
               if (res.ok) {
@@ -393,7 +393,7 @@
               });
             })
             .catch(function (err) {
-              if (err.name === 'AbortError' || cancelled) return;
+              if (cancelled) return;
               showMessage('URL ' + (index + 1) + ': network error.', true);
             })
             .then(function () {
