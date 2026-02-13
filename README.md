@@ -206,6 +206,38 @@ You can download a URL with a POST request using curl. First log in to get a ses
    ```
 
    Optional: to use a Netscape-format cookie file for age-restricted or member-only videos, add `-F "cookies=@/path/to/cookies.txt"` to the curl command.
+   
+   OPTION 1: DIRECT DOWNLOAD
+   1. Login (if needed)
+   curl -c creds.txt -X POST -d "password=stayhydrated" https://phily.bfjia.net/login; 
+
+   2. Download directly.
+   curl -b creds.txt -X POST -F "url=https://www.youtube.com/watch?v=Fp3WBT_EsZI" https://phily.bfjia.net/ddddd/aaaaa -o audio.mp3
+
+
+
+3. **Return a download URL instead of the file** (e.g. to fetch the file later or from another client):
+   Add `-F "return_url=1"` to the POST request. The response will be JSON with a `download_url` and `filename`; use that URL (with the same session cookie) to download the file:
+   ```bash
+   # Request a download URL for video
+   curl -b cookies.txt -X POST -F "url=https://www.youtube.com/watch?v=VIDEO_ID" -F "return_url=1" https://your-server/ddddd/vvvvv
+   # Response: {"download_url":"https://your-server/download/TOKEN","filename":"video.mp4"}
+
+   # Download the file using the returned URL (same cookie required)
+   curl -b cookies.txt -o video.mp4 "https://your-server/download/TOKEN"
+   ```
+   The download link is one-time use and requires the same authenticated session.
+
+      
+   OPTION 2: GET URL FIRST THEN DOWNLOAD
+   1. Login (if needed)
+   curl -c cookies.txt -X POST -d "password=YOUR_PASSWORD" https://your-server/login
+
+   2. Request a download URL (no -o here; response is JSON)
+   curl -b cookies.txt -X POST -F "url=https://www.youtube.com/watch?v=Fp3WBT_EsZI" -F "return_url=1" http://localhost:5000/ddddd/vvvvv
+
+   3. Download using the URL from the response (with the same cookie)
+   curl -b cookies.txt -o video.mp4 "https://your-server/download/TOKEN"
 
 ## Cookie file
 

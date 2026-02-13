@@ -3,6 +3,7 @@ Flask app for downloading YouTube videos/audio via yt-dlp.
 """
 import os
 import re
+import secrets
 import shutil
 import tempfile
 from pathlib import Path
@@ -49,6 +50,9 @@ _PASSWORD_HASH = generate_password_hash(_load_password(), method="scrypt")
 # and used for all future requests (until someone uploads a new one that succeeds).
 _COOKIE_DIR = os.path.join(_APP_ROOT, "data")
 PERSISTENT_COOKIE_PATH = os.path.join(_COOKIE_DIR, "cookies.txt")
+
+# Pending downloads when return_url=1: token -> (file_path, download_filename)
+_PENDING_DOWNLOADS = {}
 
 # YouTube URL patterns
 YT_WATCH_RE = re.compile(
@@ -277,6 +281,15 @@ def _handle_download(as_audio: bool):
         return jsonify({"error": "Download failed. Check the URL and try again."}), 400
 
     download_name = "audio.mp3" if as_audio else "video.mp4"
+
+    # If return_url=1 (form or query), return JSON with a download URL instead of the file
+    return_url = request.form.get("return_url") or request.args.get("return_url")
+    if return_url and str(return_url).strip() in ("1", "true", "yes"):
+        token = secrets.token_urlsafe(16)
+        _PENDING_DOWNLOADS[token] = (path, download_name)
+        download_url = url_for("download_by_token", token=token, _external=True)
+        return jsonify({"download_url": download_url, "filename": download_name})
+
     file_size = os.path.getsize(path)
     _CHUNK = 64 * 1024
 
@@ -319,6 +332,47 @@ def download_video():
 @app.route("/ddddd/aaaaa", methods=["POST"])
 def download_audio():
     return _handle_download(as_audio=True)
+
+
+@app.route("/download/<token>", methods=["GET"])
+def download_by_token(token):
+    """Serve a file that was requested with return_url=1; delete after sending."""
+    entry = _PENDING_DOWNLOADS.pop(token, None)
+    if not entry:
+        return jsonify({"error": "Download link invalid or already used."}), 404
+    path, download_name = entry
+    if not path or not os.path.isfile(path):
+        return jsonify({"error": "File no longer available."}), 404
+    file_size = os.path.getsize(path)
+    _CHUNK = 64 * 1024
+
+    def _stream_and_cleanup():
+        try:
+            with open(path, "rb") as f:
+                while True:
+                    chunk = f.read(_CHUNK)
+                    if not chunk:
+                        break
+                    yield chunk
+        finally:
+            try:
+                os.unlink(path)
+                dirpath = os.path.dirname(path)
+                if os.path.isdir(dirpath):
+                    os.rmdir(dirpath)
+            except OSError:
+                pass
+
+    safe_name = download_name.replace("\\", "\\\\").replace('"', '\\"')
+    return Response(
+        _stream_and_cleanup(),
+        mimetype="application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name}"',
+            "Content-Length": str(file_size),
+        },
+        direct_passthrough=True,
+    )
 
 
 if __name__ == "__main__":
