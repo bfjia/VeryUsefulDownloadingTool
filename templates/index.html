@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Useful tool</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f0f;
+      color: #e8e8e8;
+      padding: 1.5rem;
+    }
+    .container {
+      width: 100%;
+      max-width: 560px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #aaa;
+    }
+    .url-wrap {
+      margin-bottom: 1.25rem;
+    }
+    .url-input {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      font-size: 1.1rem;
+      border: 2px solid #333;
+      border-radius: 12px;
+      background: #1a1a1a;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .url-input::placeholder {
+      color: #666;
+    }
+    .url-input:hover {
+      border-color: #444;
+    }
+    .url-input:focus {
+      border-color: #c00;
+      box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.2);
+    }
+    .buttons {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .btn {
+      flex: 1;
+      padding: 0.9rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn-video {
+      background: #c00;
+      color: #fff;
+    }
+    .btn-video:hover { opacity: 0.9; }
+    .btn-audio {
+      background: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+    }
+    .btn-audio:hover { background: #333; }
+    .advanced-toggle {
+      display: block;
+      width: 100%;
+      padding: 0.5rem 0;
+      font-size: 0.9rem;
+      color: #888;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      text-decoration: underline;
+    }
+    .advanced-toggle:hover { color: #aaa; }
+    .advanced {
+      margin-top: 0.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid #2a2a2a;
+      display: none;
+    }
+    .advanced.open { display: block; }
+    .advanced label {
+      display: block;
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 0.35rem;
+    }
+    .advanced input[type="file"] {
+      font-size: 0.9rem;
+      color: #aaa;
+      padding: 0.25rem 0;
+    }
+    .flash {
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .flash.error {
+      background: rgba(200, 60, 60, 0.2);
+      color: #f88;
+    }
+    .progress-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .progress-overlay.visible {
+      display: flex;
+    }
+    .progress-card {
+      background: #1a1a1a;
+      padding: 1.5rem 2rem;
+      border-radius: 12px;
+      min-width: 280px;
+      text-align: center;
+    }
+    .progress-card p {
+      margin: 0 0 1rem;
+      color: #e8e8e8;
+    }
+    .progress-bar-wrap {
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 30%;
+      background: #c00;
+      border-radius: 4px;
+      animation: progress-pulse 1.2s ease-in-out infinite;
+    }
+    .progress-stop-wrap {
+      margin-top: 1rem;
+    }
+    .btn-stop {
+      background: #444;
+      color: #fff;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.9rem;
+    }
+    .btn-stop:hover { background: #555; }
+    @keyframes progress-pulse {
+      0%, 100% { transform: translateX(-100%); }
+      50% { transform: translateX(350%); }
+    }
+    .multi-toggle {
+      display: block;
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.5rem 0;
+      font-size: 0.9rem;
+      color: #888;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      text-decoration: underline;
+    }
+    .multi-toggle:hover { color: #aaa; }
+    .multi-section {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #2a2a2a;
+      display: none;
+    }
+    .multi-section.open { display: block; }
+    .multi-section .url-input {
+      min-height: 120px;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .multi-section .buttons {
+      margin-top: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Very Useful Tool</h1>
+
+    <div id="message" class="flash" role="alert" style="display: none;"></div>
+
+    <form id="download-form" method="post" enctype="multipart/form-data">
+      <div class="url-wrap">
+        <input
+          type="url"
+          name="url"
+          class="url-input"
+          placeholder="Paste URL here…"
+          autocomplete="url"
+          required
+        >
+      </div>
+      <div class="buttons">
+        <button type="submit" class="btn btn-video" name="mode" value="video">Download Video</button>
+        <button type="submit" class="btn btn-audio" name="mode" value="audio">Download Audio</button>
+      </div>
+      <button type="button" class="multi-toggle" id="multi-toggle" aria-expanded="false">Paste multiple URLs</button>
+      <div class="multi-section" id="multi-section" role="region" aria-label="Multiple URLs">
+        <div class="url-wrap">
+          <textarea
+            id="multi-urls"
+            class="url-input"
+            placeholder="Paste one URL per line…"
+            rows="5"
+          ></textarea>
+        </div>
+        <div class="buttons">
+          <button type="button" class="btn btn-video" id="multi-download-video">Download Video (each URL)</button>
+          <button type="button" class="btn btn-audio" id="multi-download-audio">Download Audio (each URL)</button>
+        </div>
+      </div>
+      <button type="button" class="advanced-toggle" id="advanced-toggle" aria-expanded="false">Not working? Try uploading a new cookie to use for downloads</button>
+      <div class="advanced" id="advanced" role="region" aria-label="Advanced options">
+        <label for="cookies">Upload a new cookie to use for downloads</label>
+        <input type="file" name="cookies" id="cookies" accept=".txt,.cookies">
+      </div>
+    </form>
+    <form method="post" action="{{ url_for('logout') }}" style="margin-top:1rem;text-align:center;">
+      <button type="submit" class="advanced-toggle" style="margin:0;">Log out</button>
+    </form>
+  </div>
+
+  <div id="progress-overlay" class="progress-overlay" aria-live="polite" aria-busy="false">
+    <div class="progress-card">
+      <p id="progress-text">Preparing download…</p>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" aria-hidden="true"></div>
+      </div>
+      <div class="progress-stop-wrap" id="progress-stop-wrap" style="display: none;">
+        <button type="button" class="btn btn-stop" id="progress-stop-btn">Stop</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var form = document.getElementById('download-form');
+      var advancedToggle = document.getElementById('advanced-toggle');
+      var advanced = document.getElementById('advanced');
+      var overlay = document.getElementById('progress-overlay');
+      var progressText = document.getElementById('progress-text');
+      var progressStopWrap = document.getElementById('progress-stop-wrap');
+      var progressStopBtn = document.getElementById('progress-stop-btn');
+      var messageEl = document.getElementById('message');
+
+      function showMessage(text, isError) {
+        messageEl.textContent = text;
+        messageEl.className = 'flash ' + (isError ? 'error' : '');
+        messageEl.style.display = 'block';
+      }
+      function hideMessage() {
+        messageEl.style.display = 'none';
+      }
+      function showProgress() {
+        overlay.classList.add('visible');
+        overlay.setAttribute('aria-busy', 'true');
+        progressText.textContent = 'Downloading…';
+      }
+      function hideProgress() {
+        overlay.classList.remove('visible');
+        overlay.setAttribute('aria-busy', 'false');
+      }
+
+      advancedToggle.addEventListener('click', function () {
+        var isOpen = advanced.classList.toggle('open');
+        advancedToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        advancedToggle.textContent = isOpen ? 'Hide' : 'Not working? Try uploading a new cookie to use for downloads';
+      });
+
+      var multiToggle = document.getElementById('multi-toggle');
+      var multiSection = document.getElementById('multi-section');
+      var multiUrls = document.getElementById('multi-urls');
+      var multiBtnVideo = document.getElementById('multi-download-video');
+      var multiBtnAudio = document.getElementById('multi-download-audio');
+
+      multiToggle.addEventListener('click', function () {
+        var isOpen = multiSection.classList.toggle('open');
+        multiToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        multiToggle.textContent = isOpen ? 'Hide multiple URLs' : 'Paste multiple URLs';
+      });
+
+      function parseMultiUrls() {
+        var raw = (multiUrls && multiUrls.value) ? multiUrls.value : '';
+        var lines = raw.split(/\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+        var valid = [];
+        var invalid = [];
+        for (var i = 0; i < lines.length; i++) {
+          if (isYoutubeUrl(lines[i])) valid.push(lines[i]);
+          else invalid.push(lines[i]);
+        }
+        return { valid: valid, invalid: invalid };
+      }
+
+      function runMultiDownloads(urls, asAudio) {
+        if (urls.length === 0) {
+          showMessage('Please enter at least one valid YouTube URL (one per line).', true);
+          return;
+        }
+        hideMessage();
+        var action = asAudio ? '{{ url_for("download_audio") }}' : '{{ url_for("download_video") }}';
+        var mode = asAudio ? 'audio' : 'video';
+        var total = urls.length;
+        var index = 0;
+        var cancelled = false;
+        var abortController = new AbortController();
+
+        function finish(doneCount, stopped) {
+          progressStopWrap.style.display = 'none';
+          hideProgress();
+          if (stopped) {
+            showMessage('Stopped. Downloaded ' + doneCount + ' of ' + total + ' file(s).', false);
+          } else {
+            showMessage('Downloaded ' + total + ' file(s).', false);
+          }
+        }
+
+        progressStopBtn.onclick = function () {
+          cancelled = true;
+          abortController.abort();
+        };
+
+        function next() {
+          if (cancelled) {
+            finish(index, true);
+            return;
+          }
+          if (index >= total) {
+            finish(total, false);
+            return;
+          }
+          var url = urls[index];
+          progressText.textContent = 'Downloading ' + (index + 1) + ' of ' + total + '…';
+          var formData = new FormData(form);
+          formData.set('url', url);
+
+          fetch(action, { method: 'POST', body: formData, signal: abortController.signal })
+            .then(function (res) {
+              if (cancelled) return;
+              if (res.ok) {
+                return res.blob().then(function (blob) {
+                  var disp = res.headers.get('Content-Disposition');
+                  var match = disp && disp.match(/filename\*?=(?:UTF-8'')?([^;\s]+)/i);
+                  var filename = (match && match[1] && decodeURIComponent(match[1].replace(/^["']|["']$/g, '').trim())) || (mode === 'audio' ? 'audio.mp3' : 'video.mp4');
+                  if (!filename || filename === '!.mp3' || filename === '!.mp4' || filename.startsWith('!.')) {
+                    filename = (mode === 'audio' ? 'audio' : 'video') + '_' + (index + 1) + (mode === 'audio' ? '.mp3' : '.mp4');
+                  }
+                  var a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = filename;
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                });
+              }
+              if (res.status === 401) {
+                window.location.href = '{{ url_for("login") }}';
+                return;
+              }
+              return res.json().then(function (data) {
+                showMessage('URL ' + (index + 1) + ' failed: ' + (data.error || 'Download failed'), true);
+              }, function () {
+                showMessage('URL ' + (index + 1) + ' failed.', true);
+              });
+            })
+            .catch(function (err) {
+              if (err.name === 'AbortError' || cancelled) return;
+              showMessage('URL ' + (index + 1) + ': network error.', true);
+            })
+            .then(function () {
+              var completed = index;
+              index += 1;
+              if (cancelled) {
+                finish(completed, true);
+              } else {
+                next();
+              }
+            });
+        }
+
+        showProgress();
+        progressStopWrap.style.display = 'block';
+        next();
+      }
+
+      function startMultiDownload(asAudio) {
+        var parsed = parseMultiUrls();
+        var valid = parsed.valid;
+        var invalid = parsed.invalid;
+
+        if (invalid.length > 0) {
+          var msg = invalid.length === 1
+            ? '1 invalid link (not a YouTube URL) will be skipped: "' + invalid[0] + '"'
+            : invalid.length + ' invalid links (not YouTube URLs) will be skipped:\n' + invalid.slice(0, 10).map(function (u) { return '"' + u + '"'; }).join('\n') + (invalid.length > 10 ? '\n… and ' + (invalid.length - 10) + ' more' : '');
+          if (!confirm(msg + '\n\nContinue and download only the ' + valid.length + ' valid URL(s)?')) {
+            return;
+          }
+        }
+
+        if (valid.length === 0) {
+          showMessage('No valid YouTube URLs to download. Enter at least one YouTube link per line.', true);
+          return;
+        }
+
+        runMultiDownloads(valid, asAudio);
+      }
+
+      multiBtnVideo.addEventListener('click', function () {
+        startMultiDownload(false);
+      });
+      multiBtnAudio.addEventListener('click', function () {
+        startMultiDownload(true);
+      });
+
+      function isYoutubeUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+        var u = url.trim();
+        return /youtube\.com\/(?:watch\?|shorts\/|playlist\?)/i.test(u) || /youtu\.be\//i.test(u);
+      }
+
+      function isPlaylistUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+        var u = url.trim();
+        return (/youtube\.com\/playlist\?.*\blist=/i.test(u)) || (/youtube\.com\/watch/i.test(u) && u.indexOf('list=') !== -1);
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var urlInput = form.querySelector('input[name="url"]');
+        var url = urlInput ? urlInput.value : '';
+        if (!isYoutubeUrl(url)) {
+          showMessage('Please enter a valid YouTube URL.', true);
+          return;
+        }
+        if (isPlaylistUrl(url)) {
+          if (!confirm('This is a playlist. Only the video selected in the playlist will be downloaded. Continue?')) {
+            return;
+          }
+        }
+        var mode = (e.submitter && e.submitter.getAttribute('name') === 'mode' && e.submitter.value) || 'video';
+        var action = mode === 'audio' ? '{{ url_for("download_audio") }}' : '{{ url_for("download_video") }}';
+        var formData = new FormData(form);
+
+        hideMessage();
+        showProgress();
+
+        fetch(action, {
+          method: 'POST',
+          body: formData
+        })
+          .then(function (res) {
+            if (res.ok) {
+              return res.blob().then(function (blob) {
+                var name = res.headers.get('Content-Disposition');
+                var match = name && name.match(/filename\*?=(?:UTF-8'')?([^;\s]+)/i);
+                var filename = (match && match[1] && decodeURIComponent(match[1].replace(/^["']|["']$/g, '').trim())) || (mode === 'audio' ? 'audio.mp3' : 'video.mp4');
+                if (!filename || filename === '!.mp3' || filename === '!.mp4' || filename.startsWith('!.')) {
+                  filename = mode === 'audio' ? 'audio.mp3' : 'video.mp4';
+                }
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(a.href);
+              });
+            }
+            if (res.status === 401) {
+              window.location.href = '{{ url_for("login") }}';
+              return;
+            }
+            return res.json().then(function (data) {
+              showMessage(data.error || 'Something went wrong.', true);
+            }, function () {
+              showMessage('Download failed.', true);
+            });
+          })
+          .catch(function () {
+            showMessage('Network error. Please try again.', true);
+          })
+          .then(hideProgress);
+      });
+    })();
+  </script>
+</body>
+</html>
