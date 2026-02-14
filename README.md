@@ -239,6 +239,14 @@ You can download a URL with a POST request using curl. First log in to get a ses
    3. Download using the URL from the response (with the same cookie)
    curl -b cookies.txt -o video.mp4 "https://your-server/download/TOKEN"
 
+4. **Upload and validate a cookie via POST** (e.g. to set the server’s persistent cookie from the command line):
+   Send the cookie file in the form field `cookies`. The server validates it by downloading a test video as audio; on success it persists the cookie and returns a download link for that test audio (same format as `return_url=1`):
+   ```bash
+   curl -b cookies.txt -X POST -F "cookies=@/path/to/cookies.txt" https://your-server/ddddd/cookies
+   # On success: {"download_url":"https://your-server/download/TOKEN","filename":"audio.mp3"}
+   curl -b cookies.txt -o audio.mp3 "https://your-server/download/TOKEN"
+   ```
+
 ## Cookie file
 
 Export cookies from your browser (e.g. with an extension like “Get cookies.txt”) in Netscape format and upload that file in the Advanced section when needed.

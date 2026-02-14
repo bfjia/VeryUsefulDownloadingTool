@@ -54,6 +54,9 @@ PERSISTENT_COOKIE_PATH = os.path.join(_COOKIE_DIR, "cookies.txt")
 # Pending downloads when return_url=1: token -> (file_path, download_filename)
 _PENDING_DOWNLOADS = {}
 
+# URL used to validate uploaded cookies (must be downloadable as audio)
+_COOKIE_VALIDATION_URL = "https://www.youtube.com/watch?v=hKlbYQdpzU8"
+
 # YouTube URL patterns
 YT_WATCH_RE = re.compile(
     r"(?:youtube\.com/watch\?.*\bv=([a-zA-Z0-9_-]{11})|youtu\.be/([a-zA-Z0-9_-]{11})|youtube\.com/shorts/([a-zA-Z0-9_-]{11}))",
@@ -332,6 +335,52 @@ def download_video():
 @app.route("/ddddd/aaaaa", methods=["POST"])
 def download_audio():
     return _handle_download(as_audio=True)
+
+
+@app.route("/ddddd/cookies", methods=["POST"])
+def upload_cookie():
+    """
+    Upload a cookie file for validation. The cookie is validated by downloading
+    a test video as audio. If successful, the cookie is persisted and a
+    download link for the test audio is returned.
+    """
+    if "cookies" not in request.files:
+        return jsonify({"error": "No cookie file provided. Use form field 'cookies'."}), 400
+    f = request.files["cookies"]
+    if not f or not f.filename:
+        return jsonify({"error": "Cookie file is empty or has no filename."}), 400
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as tmp:
+        f.save(tmp.name)
+        cookiefile_path = tmp.name
+
+    try:
+        path, info = _download(
+            _COOKIE_VALIDATION_URL,
+            as_audio=True,
+            cookiefile_path=cookiefile_path,
+        )
+        if not path or not os.path.isfile(path):
+            return jsonify({"error": "Cookie validation failed. The cookie could not download the test video."}), 400
+
+        # Persist cookie for future use
+        try:
+            os.makedirs(_COOKIE_DIR, exist_ok=True)
+            shutil.copy2(cookiefile_path, PERSISTENT_COOKIE_PATH)
+        except OSError:
+            pass
+
+        download_name = "audio.mp3"
+        token = secrets.token_urlsafe(16)
+        _PENDING_DOWNLOADS[token] = (path, download_name)
+        download_url = url_for("download_by_token", token=token, _external=True)
+        return jsonify({"download_url": download_url, "filename": download_name})
+    finally:
+        try:
+            if os.path.isfile(cookiefile_path):
+                os.unlink(cookiefile_path)
+        except OSError:
+            pass
 
 
 @app.route("/download/<token>", methods=["GET"])
